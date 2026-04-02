@@ -13,9 +13,10 @@ export default function SortableGoalCard({ id, goal, onClick }) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes}>
+    <div ref={setNodeRef} style={style} {...attributes} onClick={onClick}>
       <div
         {...listeners}
+        onClick={(e) => e.stopPropagation()}
         style={{
           position: 'absolute',
           top: 8,
@@ -31,7 +32,7 @@ export default function SortableGoalCard({ id, goal, onClick }) {
       >
         ⠿
       </div>
-      <GoalCard goal={goal} onClick={onClick} />
+      <GoalCard goal={goal} />
     </div>
   );
 }
