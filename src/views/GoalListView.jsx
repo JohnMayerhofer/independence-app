@@ -21,6 +21,8 @@ export default function GoalListView({ onSelectGoal }) {
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState({});
 
+  const stringUser = (user?.email || 'anonymous').toLowerCase();
+
   useEffect(() => {
     const key = `independenceapp_collapsed_groups_${stringUser}_${sortBy}`;
     try {
@@ -41,8 +43,6 @@ export default function GoalListView({ onSelectGoal }) {
       // ignore localStorage errors
     }
   }, [collapsedGroups, stringUser, sortBy]);
-
-  const stringUser = (user?.email || 'anonymous').toLowerCase();
   const groupOrder = useLocalOrder('goal_group_order', `${stringUser}_${sortBy}`);
   const goalOrder = useLocalOrder('goal_item_order', `${stringUser}_${sortBy}`);
 
