@@ -1,6 +1,6 @@
 export const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 export const SHEET_ID = import.meta.env.VITE_SHEET_ID || '';
-export const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
+export const SCOPES = 'https://www.googleapis.com/auth/spreadsheets email profile';
 
 export const SHEET_NAMES = {
   PORTFOLIO: 'Independence Goal Portfolio',
