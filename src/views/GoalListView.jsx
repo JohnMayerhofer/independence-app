@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
-import { DndContext, closestCenter } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useGoals } from '../store/GoalContext';
 import GoalCard from '../components/GoalCard';
@@ -20,6 +20,8 @@ export default function GoalListView({ onSelectGoal }) {
   const [filterFocus, setFilterFocus] = useState(false);
   const [search, setSearch] = useState('');
   const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   const stringUser = (user?.email || 'anonymous').toLowerCase();
 
@@ -205,7 +207,7 @@ export default function GoalListView({ onSelectGoal }) {
         <div className="view-empty">No goals match your filters.</div>
       )}
 
-      <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+      <DndContext sensors={sensors} onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
         <SortableContext
           items={orderedGroupEntries.map(([group]) => group)}
           strategy={verticalListSortingStrategy}
@@ -228,7 +230,7 @@ export default function GoalListView({ onSelectGoal }) {
                   <h3>{group}</h3>
                   <span className="goal-group-count">{groupGoals.length}</span>
                 </div>
-                <DndContext onDragEnd={(event) => handleGoalDragEnd(event, group)} collisionDetection={closestCenter}>
+                <DndContext sensors={sensors} onDragEnd={(event) => handleGoalDragEnd(event, group)} collisionDetection={closestCenter}>
                   <SortableContext
                     items={groupGoals.map((g) => `${group}|${g.rowNumber}`)}
                     strategy={verticalListSortingStrategy}
