@@ -13,26 +13,27 @@ export default function SortableGoalCard({ id, goal, onClick }) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} onClick={onClick}>
+    <div ref={setNodeRef} style={style} {...attributes}>
       <div
         {...listeners}
-        onClick={(e) => e.stopPropagation()}
         style={{
           position: 'absolute',
           top: 8,
           right: 8,
           cursor: 'grab',
-          padding: '2px 4px',
-          color: '#bbb',
-          fontSize: 16,
+          padding: '4px 6px',
+          color: '#888',
+          fontSize: 18,
           lineHeight: 1,
-          zIndex: 1,
+          zIndex: 2,
         }}
         title="Drag to reorder"
       >
         ⠿
       </div>
-      <GoalCard goal={goal} />
+      <div onPointerDown={(e) => e.stopPropagation()} onClick={onClick}>
+        <GoalCard goal={goal} />
+      </div>
     </div>
   );
 }
