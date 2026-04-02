@@ -1,6 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { DndContext, closestCenter } from '@dnd-kit/core';
+import { SortableContext, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useGoals } from '../store/GoalContext';
 import GoalCard from '../components/GoalCard';
+import SortableGroup from '../components/SortableGroup';
+import SortableGoalCard from '../components/SortableGoalCard';
+import { useLocalOrder } from '../hooks/useLocalOrder';
 import { frequencyCategory } from '../utils/helpers';
 import { IMPORTANCE_LEVELS, IMPORTANCE_LABELS } from '../config';
 
@@ -8,12 +13,38 @@ const SORT_OPTIONS = ['Category', 'Importance', 'Frequency'];
 
 export default function GoalListView({ onSelectGoal }) {
   const { state } = useGoals();
-  const { goals, loading, error } = state;
+  const { goals, loading, error, user } = state;
   const [sortBy, setSortBy] = useState('Category');
   const [filterImportance, setFilterImportance] = useState('');
   const [filterFrequency, setFilterFrequency] = useState('');
   const [filterFocus, setFilterFocus] = useState(false);
   const [search, setSearch] = useState('');
+  const [collapsedGroups, setCollapsedGroups] = useState({});
+
+  useEffect(() => {
+    const key = `independenceapp_collapsed_groups_${stringUser}_${sortBy}`;
+    try {
+      const saved = localStorage.getItem(key);
+      if (saved) {
+        setCollapsedGroups(JSON.parse(saved));
+      }
+    } catch (err) {
+      console.warn('Failed to restore collapsed group state', err);
+    }
+  }, [stringUser, sortBy]);
+
+  useEffect(() => {
+    const key = `independenceapp_collapsed_groups_${stringUser}_${sortBy}`;
+    try {
+      localStorage.setItem(key, JSON.stringify(collapsedGroups));
+    } catch {
+      // ignore localStorage errors
+    }
+  }, [collapsedGroups, stringUser, sortBy]);
+
+  const stringUser = (user?.email || 'anonymous').toLowerCase();
+  const groupOrder = useLocalOrder('goal_group_order', `${stringUser}_${sortBy}`);
+  const goalOrder = useLocalOrder('goal_item_order', `${stringUser}_${sortBy}`);
 
   const importanceOrder = { must: 0, should: 1, nice: 2 };
 
@@ -39,7 +70,6 @@ export default function GoalListView({ onSelectGoal }) {
     return arr;
   }, [filtered, sortBy]);
 
-  // Group by primary sort key
   const grouped = useMemo(() => {
     const map = new Map();
     for (const g of sorted) {
@@ -53,6 +83,63 @@ export default function GoalListView({ onSelectGoal }) {
     }
     return map;
   }, [sorted, sortBy]);
+
+  const orderedGroupEntries = useMemo(() => {
+    const entries = [...grouped.entries()];
+    return groupOrder.applyOrder(entries, ([key]) => key);
+  }, [grouped, groupOrder]);
+
+  const orderedGroupGoals = useMemo(() => {
+    const map = new Map();
+    for (const [group, groupGoals] of orderedGroupEntries) {
+      const ordered = goalOrder.applyOrder(groupGoals, (item) => `${group}|${item.rowNumber}`);
+      map.set(group, ordered);
+    }
+    return map;
+  }, [orderedGroupEntries, goalOrder]);
+
+  const handleDragEnd = useCallback(
+    ({ active, over }) => {
+      if (!over || active.id === over.id) return;
+      const keys = orderedGroupEntries.map(([key]) => key);
+      const oldIndex = keys.indexOf(active.id);
+      const newIndex = keys.indexOf(over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+      const newOrder = arrayMove(keys, oldIndex, newIndex);
+      groupOrder.setOrder(newOrder);
+    },
+    [orderedGroupEntries, groupOrder]
+  );
+
+  const handleGoalDragEnd = useCallback(
+    ({ active, over }, group) => {
+      if (!over || active.id === over.id) return;
+      const groupGoals = orderedGroupGoals.get(group) || [];
+      const ids = groupGoals.map((g) => `${group}|${g.rowNumber}`);
+      const oldIndex = ids.indexOf(active.id);
+      const newIndex = ids.indexOf(over.id);
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      const newGroupIds = arrayMove(ids, oldIndex, newIndex);
+      const allGoalIds = [];
+      for (const [grp, goalsForGroup] of orderedGroupGoals) {
+        if (grp === group) {
+          allGoalIds.push(...newGroupIds);
+        } else {
+          allGoalIds.push(...goalsForGroup.map((g) => `${grp}|${g.rowNumber}`));
+        }
+      }
+      goalOrder.setOrder(allGoalIds);
+    },
+    [orderedGroupGoals, goalOrder]
+  );
+
+  const toggleGroup = useCallback((group) => {
+    setCollapsedGroups((prev) => ({
+      ...prev,
+      [group]: !prev[group],
+    }));
+  }, []);
 
   if (!state.authed) {
     return (
@@ -118,19 +205,50 @@ export default function GoalListView({ onSelectGoal }) {
         <div className="view-empty">No goals match your filters.</div>
       )}
 
-      {[...grouped.entries()].map(([group, groupGoals]) => (
-        <div key={group} className="goal-group">
-          <div className="goal-group-header">
-            <h3>{group}</h3>
-            <span className="goal-group-count">{groupGoals.length}</span>
-          </div>
-          <div className="goal-grid">
-            {groupGoals.map((g) => (
-              <GoalCard key={`${g.rowNumber}`} goal={g} onClick={() => onSelectGoal(g)} />
-            ))}
-          </div>
-        </div>
-      ))}
+      <DndContext onDragEnd={handleDragEnd} collisionDetection={closestCenter}>
+        <SortableContext
+          items={orderedGroupEntries.map(([group]) => group)}
+          strategy={verticalListSortingStrategy}
+        >
+          {orderedGroupEntries.map(([group]) => {
+            const groupGoals = orderedGroupGoals.get(group) || [];
+            const isCollapsed = !!collapsedGroups[group];
+            return (
+              <SortableGroup key={group} id={group}>
+                <div className="goal-group-header">
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group)}
+                    className="group-collapse-button"
+                    aria-label={isCollapsed ? `Expand ${group}` : `Collapse ${group}`}
+                  >
+                    {isCollapsed ? '▸' : '▾'}
+                  </button>
+                  <h3>{group}</h3>
+                  <span className="goal-group-count">{groupGoals.length}</span>
+                </div>
+                <DndContext onDragEnd={(event) => handleGoalDragEnd(event, group)} collisionDetection={closestCenter}>
+                  <SortableContext
+                    items={groupGoals.map((g) => `${group}|${g.rowNumber}`)}
+                    strategy={verticalListSortingStrategy}
+                  >
+                    <div className={`goal-grid ${isCollapsed ? 'collapsed' : 'expanded'}`}>
+                      {groupGoals.map((g) => (
+                        <SortableGoalCard
+                          key={`${group}|${g.rowNumber}`}
+                          id={`${group}|${g.rowNumber}`}
+                          goal={g}
+                          onClick={() => onSelectGoal(g)}
+                        />
+                      ))}
+                    </div>
+                  </SortableContext>
+                </DndContext>
+              </SortableGroup>
+            );
+          })}
+        </SortableContext>
+      </DndContext>
     </div>
   );
 }

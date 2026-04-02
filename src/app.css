@@ -213,13 +213,42 @@ textarea, select, input { font-family: inherit; font-size: 14px; }
 .focus-toggle-large { font-size: 14px; font-weight: 600; color: var(--color-text); gap: 8px; }
 .focus-toggle-large input { width: 18px; height: 18px; cursor: pointer; accent-color: var(--color-primary); }
 
-.goal-group { display: flex; flex-direction: column; gap: 12px; }
+.goal-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 10px;
+  background: var(--color-surface);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.goal-group:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+.goal-group.sortable-group {
+  cursor: grab;
+}
+.goal-group.sortable-group:active {
+  cursor: grabbing;
+}
 .goal-group-header {
   display: flex;
   align-items: center;
   gap: 10px;
   padding-bottom: 8px;
   border-bottom: 2px solid var(--color-border);
+}
+.group-collapse-button {
+  border: none;
+  background: none;
+  font-size: 14px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+.group-collapse-button:hover {
+  color: var(--color-primary);
 }
 .goal-group-header h3 { font-size: 16px; font-weight: 700; color: var(--color-text); }
 .goal-group-count {
@@ -235,6 +264,13 @@ textarea, select, input { font-family: inherit; font-size: 14px; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+.goal-grid.collapsed {
+  opacity: 0;
+  transform: translateY(-8px);
+  max-height: 0;
+  overflow: hidden;
 }
 
 /* ============================================================
