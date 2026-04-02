@@ -217,36 +217,39 @@ export default function GoalListView({ onSelectGoal }) {
             const isCollapsed = !!collapsedGroups[group];
             return (
               <SortableGroup key={group} id={group}>
-                <div className="goal-group-header">
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(group)}
-                    onPointerDown={(e) => e.stopPropagation()}
-                    className="group-collapse-button"
-                    aria-label={isCollapsed ? `Expand ${group}` : `Collapse ${group}`}
-                  >
-                    {isCollapsed ? '▸' : '▾'}
-                  </button>
-                  <h3>{group}</h3>
-                  <span className="goal-group-count">{groupGoals.length}</span>
-                </div>
-                <DndContext sensors={sensors} onDragEnd={(event) => handleGoalDragEnd(event, group)} collisionDetection={closestCenter}>
-                  <SortableContext
-                    items={groupGoals.map((g) => `${group}|${g.rowNumber}`)}
-                    strategy={verticalListSortingStrategy}
-                  >
-                    <div className={`goal-grid ${isCollapsed ? 'collapsed' : 'expanded'}`}>
-                      {groupGoals.map((g) => (
-                        <SortableGoalCard
-                          key={`${group}|${g.rowNumber}`}
-                          id={`${group}|${g.rowNumber}`}
-                          goal={g}
-                          onClick={() => onSelectGoal(g)}
-                        />
-                      ))}
+                {(dragHandle) => (
+                  <>
+                    <div className="goal-group-header">
+                      <button
+                        type="button"
+                        onClick={() => toggleGroup(group)}
+                        className="group-collapse-button"
+                        aria-label={isCollapsed ? `Expand ${group}` : `Collapse ${group}`}
+                      >
+                        {isCollapsed ? '▸' : '▾'}
+                      </button>
+                      <h3 {...dragHandle} style={{ cursor: 'grab' }}>{group}</h3>
+                      <span className="goal-group-count">{groupGoals.length}</span>
                     </div>
-                  </SortableContext>
-                </DndContext>
+                    <DndContext sensors={sensors} onDragEnd={(event) => handleGoalDragEnd(event, group)} collisionDetection={closestCenter}>
+                      <SortableContext
+                        items={groupGoals.map((g) => `${group}|${g.rowNumber}`)}
+                        strategy={verticalListSortingStrategy}
+                      >
+                        <div className={`goal-grid ${isCollapsed ? 'collapsed' : 'expanded'}`}>
+                          {groupGoals.map((g) => (
+                            <SortableGoalCard
+                              key={`${group}|${g.rowNumber}`}
+                              id={`${group}|${g.rowNumber}`}
+                              goal={g}
+                              onClick={() => onSelectGoal(g)}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </>
+                )}
               </SortableGroup>
             );
           })}
