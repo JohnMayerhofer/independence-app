@@ -219,6 +219,7 @@ export default function GoalListView({ onSelectGoal }) {
                   <button
                     type="button"
                     onClick={() => toggleGroup(group)}
+                    onPointerDown={(e) => e.stopPropagation()}
                     className="group-collapse-button"
                     aria-label={isCollapsed ? `Expand ${group}` : `Collapse ${group}`}
                   >

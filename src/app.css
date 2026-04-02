@@ -243,8 +243,8 @@ textarea, select, input { font-family: inherit; font-size: 14px; }
 .group-collapse-button {
   border: none;
   background: none;
-  font-size: 14px;
-  padding: 2px 6px;
+  font-size: 20px;
+  padding: 2px 8px;
   cursor: pointer;
 }
 .group-collapse-button:hover {
