@@ -18,7 +18,7 @@ export default function SortableGoalCard({ id, goal, onClick }) {
         {...listeners}
         style={{
           position: 'absolute',
-          top: 8,
+          bottom: 8,
           right: 8,
           cursor: 'grab',
           padding: '4px 6px',

@@ -10,32 +10,21 @@ export default function App() {
   const [currentView, setCurrentView] = useState('Goals');
   const [selectedGoal, setSelectedGoal] = useState(null);
 
-  function handleSelectGoal(goal) {
-    setSelectedGoal(goal);
-  }
-
-  function handleBack() {
-    setSelectedGoal(null);
-  }
-
   function handleViewChange(view) {
     setCurrentView(view);
     setSelectedGoal(null);
   }
 
   function renderContent() {
-    if (selectedGoal && currentView === 'Goals') {
-      return <GoalDetailView goal={selectedGoal} onBack={handleBack} />;
-    }
     switch (currentView) {
       case 'Goals':
-        return <GoalListView onSelectGoal={handleSelectGoal} />;
+        return <GoalListView onSelectGoal={setSelectedGoal} />;
       case 'Progress':
         return <ProgressView />;
       case 'Background':
         return <BackgroundView />;
       default:
-        return <GoalListView onSelectGoal={handleSelectGoal} />;
+        return <GoalListView onSelectGoal={setSelectedGoal} />;
     }
   }
 
@@ -44,6 +33,14 @@ export default function App() {
       <AppShell currentView={currentView} onViewChange={handleViewChange}>
         {renderContent()}
       </AppShell>
+      {selectedGoal && (
+        <div className="modal-overlay" onClick={() => setSelectedGoal(null)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedGoal(null)}>✕</button>
+            <GoalDetailView goal={selectedGoal} onBack={() => setSelectedGoal(null)} />
+          </div>
+        </div>
+      )}
     </GoalProvider>
   );
 }
